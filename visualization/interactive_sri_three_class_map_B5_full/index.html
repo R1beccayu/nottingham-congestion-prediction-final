@@ -1,0 +1,372 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Interactive SRI congestion severity map</title>
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, Helvetica, sans-serif;
+      color: #202833;
+      background: #f6f7f8;
+    }
+    header {
+      padding: 20px 30px 14px;
+      background: white;
+      border-bottom: 1px solid #d8dde3;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    h1 {
+      margin: 0 0 14px;
+      font-size: 24px;
+      letter-spacing: 0;
+    }
+    .controls {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: end;
+      gap: 14px 18px;
+      margin-bottom: 12px;
+    }
+    label {
+      display: grid;
+      gap: 5px;
+      font-size: 13px;
+      font-weight: 700;
+    }
+    select {
+      min-width: 160px;
+      padding: 7px 9px;
+      border: 1px solid #b9c3cf;
+      background: white;
+      font: inherit;
+      font-size: 14px;
+    }
+    .selected {
+      color: #586575;
+      font-size: 14px;
+      padding-bottom: 8px;
+    }
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 18px;
+      font-size: 13px;
+    }
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+    }
+    .legend-item span {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.25);
+    }
+    .legend-item em {
+      color: #586575;
+      font-style: normal;
+    }
+    main {
+      padding: 18px 24px 30px;
+      max-width: 1500px;
+      margin: 0 auto;
+    }
+    .panel {
+      background: white;
+      border: 1px solid #d8dde3;
+      margin-bottom: 18px;
+      padding: 16px;
+    }
+    h2 {
+      margin: 0 0 14px;
+      font-size: 20px;
+    }
+    h2 span {
+      color: #586575;
+      font-weight: 400;
+      margin-left: 8px;
+    }
+    .maps {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    h3 {
+      margin: 0 0 8px;
+      font-size: 16px;
+    }
+    .map {
+      height: 430px;
+      border: 1px solid #cfd6df;
+      background: #e9eef3;
+    }
+    .popup-title {
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .loading {
+      color: #8a4b00;
+    }
+    @media (max-width: 900px) {
+      .maps { grid-template-columns: 1fr; }
+      .map { height: 390px; }
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>Interactive spatial-temporal congestion severity map</h1>
+    <div class="controls">
+      <label>Date
+        <select id="date-select"></select>
+      </label>
+      <label>Prediction origin time
+        <select id="time-select"></select>
+      </label>
+      <div class="selected" id="selected-summary"></div>
+    </div>
+    <div class="legend">
+        <div class="legend-item">
+          <span style="background:#2ca25f"></span>
+          <strong>Non-cong.</strong>
+          <em>SRI &lt;= 0.10</em>
+        </div>
+        
+
+        <div class="legend-item">
+          <span style="background:#f4c430"></span>
+          <strong>Cong.</strong>
+          <em>0.10 &lt; SRI &lt;= 0.40</em>
+        </div>
+        
+
+        <div class="legend-item">
+          <span style="background:#d7301f"></span>
+          <strong>Severe cong.</strong>
+          <em>SRI &gt; 0.40</em>
+        </div>
+        </div>
+  </header>
+  <main>
+    
+    <section class="panel" data-horizon="15">
+      <h2>15-min horizon <span id="target-15"></span></h2>
+      <div class="maps">
+        <div>
+          <h3>Ground truth</h3>
+          <div id="truth-15" class="map"></div>
+        </div>
+        <div>
+          <h3>Predicted</h3>
+          <div id="pred-15" class="map"></div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="panel" data-horizon="30">
+      <h2>30-min horizon <span id="target-30"></span></h2>
+      <div class="maps">
+        <div>
+          <h3>Ground truth</h3>
+          <div id="truth-30" class="map"></div>
+        </div>
+        <div>
+          <h3>Predicted</h3>
+          <div id="pred-30" class="map"></div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="panel" data-horizon="45">
+      <h2>45-min horizon <span id="target-45"></span></h2>
+      <div class="maps">
+        <div>
+          <h3>Ground truth</h3>
+          <div id="truth-45" class="map"></div>
+        </div>
+        <div>
+          <h3>Predicted</h3>
+          <div id="pred-45" class="map"></div>
+        </div>
+      </div>
+    </section>
+    
+    <section class="panel" data-horizon="60">
+      <h2>60-min horizon <span id="target-60"></span></h2>
+      <div class="maps">
+        <div>
+          <h3>Ground truth</h3>
+          <div id="truth-60" class="map"></div>
+        </div>
+        <div>
+          <h3>Predicted</h3>
+          <div id="pred-60" class="map"></div>
+        </div>
+      </div>
+    </section>
+    
+  </main>
+  <script>
+    const NODES = [{"id":"13812_anti_clockwise","lat":52.9448605,"lon":-1.1886625,"countline":"13812","direction":"anti_clockwise","name":"S3_DerbyRd_West_not002"},{"id":"13812_clockwise","lat":52.9448605,"lon":-1.1886625,"countline":"13812","direction":"clockwise","name":"S3_DerbyRd_West_not002"},{"id":"13814_anti_clockwise","lat":52.9551275,"lon":-1.164612,"countline":"13814","direction":"anti_clockwise","name":"S2_DerbyRd_not002"},{"id":"13814_clockwise","lat":52.9551275,"lon":-1.164612,"countline":"13814","direction":"clockwise","name":"S2_DerbyRd_not002"},{"id":"13820_anti_clockwise","lat":52.9465355,"lon":-1.1721605,"countline":"13820","direction":"anti_clockwise","name":"S4_AbbeyBridge_not002"},{"id":"13820_clockwise","lat":52.9465355,"lon":-1.1721605,"countline":"13820","direction":"clockwise","name":"S4_AbbeyBridge_not002"},{"id":"13823_anti_clockwise","lat":52.938263,"lon":-1.1860795,"countline":"13823","direction":"anti_clockwise","name":"S12_BeestonRd_not002"},{"id":"13823_clockwise","lat":52.938263,"lon":-1.1860795,"countline":"13823","direction":"clockwise","name":"S12_BeestonRd_not002"},{"id":"13826_anti_clockwise","lat":52.9398765,"lon":-1.1825585,"countline":"13826","direction":"anti_clockwise","name":"S5_BeestonRd_West_not002"},{"id":"13827_clockwise","lat":52.9399455,"lon":-1.18258,"countline":"13827","direction":"clockwise","name":"S6_BeestonRd_East_not002"},{"id":"13829_clockwise","lat":52.9449405,"lon":-1.188677,"countline":"13829","direction":"clockwise","name":"S15_DerbyRd_West_not002"},{"id":"13837_clockwise","lat":52.944969,"lon":-1.188722,"countline":"13837","direction":"clockwise","name":"S15_DerbyRd_Bus_not002"},{"id":"15673_clockwise","lat":52.9388275,"lon":-1.1372565,"countline":"15673","direction":"clockwise","name":"S35_TrentBridge_southbound_road_not002"},{"id":"15675_anti_clockwise","lat":52.9585575,"lon":-1.1263295,"countline":"15675","direction":"anti_clockwise","name":"S31_CaltonRd_road_not002"},{"id":"15675_clockwise","lat":52.9585575,"lon":-1.1263295,"countline":"15675","direction":"clockwise","name":"S31_CaltonRd_road_not002"},{"id":"15681_anti_clockwise","lat":52.957617,"lon":-1.1421855,"countline":"15681","direction":"anti_clockwise","name":"S30_StAnnsWellRd_road_not002"},{"id":"15681_clockwise","lat":52.957617,"lon":-1.1421855,"countline":"15681","direction":"clockwise","name":"S30_StAnnsWellRd_road_not002"},{"id":"15682_anti_clockwise","lat":52.949305,"lon":-1.143437,"countline":"15682","direction":"anti_clockwise","name":"S27_CanalSt_road_not002"},{"id":"15682_clockwise","lat":52.949305,"lon":-1.143437,"countline":"15682","direction":"clockwise","name":"S27_CanalSt_road_not002"},{"id":"15685_clockwise","lat":52.947987,"lon":-1.1417585,"countline":"15685","direction":"clockwise","name":"S26_StationSt_road_not002"},{"id":"15687_anti_clockwise","lat":52.963673,"lon":-1.1203665,"countline":"15687","direction":"anti_clockwise","name":"S32_PorchesterRd_road_not002"},{"id":"15687_clockwise","lat":52.963673,"lon":-1.1203665,"countline":"15687","direction":"clockwise","name":"S32_PorchesterRd_road_not002"},{"id":"15692_anti_clockwise","lat":52.96929,"lon":-1.1538315,"countline":"15692","direction":"anti_clockwise","name":"S28_MansfieldRd_northbound_road_not002"},{"id":"15693_clockwise","lat":52.969322,"lon":-1.1536535,"countline":"15693","direction":"clockwise","name":"S29_MansfieldRd_southbound_road_not002"},{"id":"22660_clockwise","lat":52.948496,"lon":-1.140357,"countline":"22660","direction":"clockwise","name":"S36_LondonRd_northbound_not002"},{"id":"22712_anti_clockwise","lat":52.957798,"lon":-1.1455535,"countline":"22712","direction":"anti_clockwise","name":"S42_huntingdonSt_not002"},{"id":"22712_clockwise","lat":52.957798,"lon":-1.1455535,"countline":"22712","direction":"clockwise","name":"S42_huntingdonSt_not002"},{"id":"22713_anti_clockwise","lat":52.9768695,"lon":-1.1662915,"countline":"22713","direction":"anti_clockwise","name":"S47_haydnRd_not002"},{"id":"22713_clockwise","lat":52.9768695,"lon":-1.1662915,"countline":"22713","direction":"clockwise","name":"S47_haydnRd_not002"},{"id":"22715_anti_clockwise","lat":52.976751,"lon":-1.1663235,"countline":"22715","direction":"anti_clockwise","name":"S48_northgate_southbound_not002"},{"id":"22716_clockwise","lat":52.9532265,"lon":-1.154127,"countline":"22716","direction":"clockwise","name":"S201_maidMarianWay_not002"},{"id":"22718_anti_clockwise","lat":52.961443,"lon":-1.199783,"countline":"22718","direction":"anti_clockwise","name":"S49_beechdaleRd_not002"},{"id":"22718_clockwise","lat":52.961443,"lon":-1.199783,"countline":"22718","direction":"clockwise","name":"S49_beechdaleRd_not002"},{"id":"22730_anti_clockwise","lat":52.9767665,"lon":-1.166218,"countline":"22730","direction":"anti_clockwise","name":"S48_haydnRd_not002"},{"id":"22730_clockwise","lat":52.9767665,"lon":-1.166218,"countline":"22730","direction":"clockwise","name":"S48_haydnRd_not002"},{"id":"22744_clockwise","lat":52.976795,"lon":-1.1664,"countline":"22744","direction":"clockwise","name":"S48_northgate_northbound_not002"},{"id":"25759_anti_clockwise","lat":52.9888135,"lon":-1.14762,"countline":"25759","direction":"anti_clockwise","name":"S25_danethorpeVale_road_not002"},{"id":"40853_anti_clockwise","lat":52.944506,"lon":-1.1229535,"countline":"40853","direction":"anti_clockwise","name":"s54_Trent_Ln_Road_NOT008-01"},{"id":"40853_clockwise","lat":52.944506,"lon":-1.1229535,"countline":"40853","direction":"clockwise","name":"s54_Trent_Ln_Road_NOT008-01"},{"id":"45293_anti_clockwise","lat":52.930195,"lon":-1.16474,"countline":"45293","direction":"anti_clockwise","name":"S56_QueensDr_road_not002"},{"id":"45294_clockwise","lat":52.939751,"lon":-1.16035,"countline":"45294","direction":"clockwise","name":"S57_QueensDr_road_not002"},{"id":"45298_anti_clockwise","lat":52.944929,"lon":-1.15405,"countline":"45298","direction":"anti_clockwise","name":"S59_QueensDr_road_not002"},{"id":"45298_clockwise","lat":52.944929,"lon":-1.15405,"countline":"45298","direction":"clockwise","name":"S59_QueensDr_road_not002"},{"id":"45299_anti_clockwise","lat":52.9453335,"lon":-1.15246,"countline":"45299","direction":"anti_clockwise","name":"S60_WaterwayStW_road_not002"},{"id":"45301_anti_clockwise","lat":52.9462945,"lon":-1.15247,"countline":"45301","direction":"anti_clockwise","name":"S61_WilfordRd_road_not002"},{"id":"45301_clockwise","lat":52.9462945,"lon":-1.15247,"countline":"45301","direction":"clockwise","name":"S61_WilfordRd_road_not002"},{"id":"45303_clockwise","lat":52.9802205,"lon":-1.17416,"countline":"45303","direction":"clockwise","name":"S62_ValleyRd_road_not002"},{"id":"45306_anti_clockwise","lat":52.948675,"lon":-1.151745,"countline":"45306","direction":"anti_clockwise","name":"S63_CastleBlvd_road_not002"},{"id":"45306_clockwise","lat":52.948675,"lon":-1.151745,"countline":"45306","direction":"clockwise","name":"S63_CastleBlvd_road_not002"},{"id":"45311_anti_clockwise","lat":52.9679945,"lon":-1.15568,"countline":"45311","direction":"anti_clockwise","name":"S66_GregoryBlvd_road_not002"},{"id":"45311_clockwise","lat":52.9679945,"lon":-1.15568,"countline":"45311","direction":"clockwise","name":"S66_GregoryBlvd_road_not002"},{"id":"45317_anti_clockwise","lat":52.9771805,"lon":-1.167095,"countline":"45317","direction":"anti_clockwise","name":"S68_NottinghamRd_roadLHS_not002"},{"id":"45318_clockwise","lat":52.97723,"lon":-1.167025,"countline":"45318","direction":"clockwise","name":"S68_NottinghamRd_road_RHS_not002"},{"id":"45326_clockwise","lat":52.9811155,"lon":-1.1735545,"countline":"45326","direction":"clockwise","name":"S71_ValleyRd_road_not002"},{"id":"45523_anti_clockwise","lat":52.9802605,"lon":-1.1733985,"countline":"45523","direction":"anti_clockwise","name":"S73_NottinghamRd_road_not002"},{"id":"47162_anti_clockwise","lat":52.964165,"lon":-1.1773445,"countline":"47162","direction":"anti_clockwise","name":"S91_GregoryBlvd_road_not002"},{"id":"47163_clockwise","lat":52.955477,"lon":-1.1631525,"countline":"47163","direction":"clockwise","name":"S103_DerbyTerrace_road_not002"},{"id":"47166_anti_clockwise","lat":52.9705885,"lon":-1.1534675,"countline":"47166","direction":"anti_clockwise","name":"S120_MansfieldRd_road_not002"},{"id":"47507_anti_clockwise","lat":52.955038,"lon":-1.19471,"countline":"47507","direction":"anti_clockwise","name":"S138_WollatonRd_road_not002"},{"id":"47519_anti_clockwise","lat":52.94772,"lon":-1.1905035,"countline":"47519","direction":"anti_clockwise","name":"S141_MiddletonBlvd_road_not002"},{"id":"47520_clockwise","lat":52.943155,"lon":-1.189012,"countline":"47520","direction":"clockwise","name":"S142_CliftonBlvd_road_not002"},{"id":"47522_clockwise","lat":52.961294,"lon":-1.1910815,"countline":"47522","direction":"clockwise","name":"S143_WesternBlvd_road_not002"},{"id":"47523_anti_clockwise","lat":52.979925,"lon":-1.1572075,"countline":"47523","direction":"anti_clockwise","name":"S121_HucknallRd_road_not002"},{"id":"47523_clockwise","lat":52.979925,"lon":-1.1572075,"countline":"47523","direction":"clockwise","name":"S121_HucknallRd_road_not002"},{"id":"47524_anti_clockwise","lat":52.979294,"lon":-1.1570275,"countline":"47524","direction":"anti_clockwise","name":"S122_HucknallRd_road_not002"},{"id":"47524_clockwise","lat":52.979294,"lon":-1.1570275,"countline":"47524","direction":"clockwise","name":"S122_HucknallRd_road_not002"},{"id":"47526_anti_clockwise","lat":52.983156,"lon":-1.158111,"countline":"47526","direction":"anti_clockwise","name":"S123_HucknallRd_road_not002"},{"id":"47526_clockwise","lat":52.983156,"lon":-1.158111,"countline":"47526","direction":"clockwise","name":"S123_HucknallRd_road_not002"},{"id":"47528_anti_clockwise","lat":52.9874855,"lon":-1.1597725,"countline":"47528","direction":"anti_clockwise","name":"S124_HucknallRd_road_not002"},{"id":"47530_anti_clockwise","lat":52.9872685,"lon":-1.158898,"countline":"47530","direction":"anti_clockwise","name":"S125_ValleyRd_road_not002"},{"id":"47532_anti_clockwise","lat":52.9867535,"lon":-1.1593765,"countline":"47532","direction":"anti_clockwise","name":"S126_HucknallRd_road_not002"},{"id":"47534_anti_clockwise","lat":52.986719,"lon":-1.160615,"countline":"47534","direction":"anti_clockwise","name":"S127_ValleyRd_road_not002"},{"id":"47535_anti_clockwise","lat":52.955595,"lon":-1.1774055,"countline":"47535","direction":"anti_clockwise","name":"S131_IlkestonRd_road_not002"},{"id":"47535_clockwise","lat":52.955595,"lon":-1.1774055,"countline":"47535","direction":"clockwise","name":"S131_IlkestonRd_road_not002"},{"id":"47538_anti_clockwise","lat":52.954937,"lon":-1.1941825,"countline":"47538","direction":"anti_clockwise","name":"S133_WollatonRd_road_not002"},{"id":"47542_anti_clockwise","lat":52.955307,"lon":-1.1904465,"countline":"47542","direction":"anti_clockwise","name":"S135_WollatonRd_road_not002"},{"id":"47548_anti_clockwise","lat":52.960922,"lon":-1.1908605,"countline":"47548","direction":"anti_clockwise","name":"S144_WesternBlvd_road_not002"},{"id":"47551_anti_clockwise","lat":52.989229,"lon":-1.1484065,"countline":"47551","direction":"anti_clockwise","name":"S146_ValleyRd_road_not002"},{"id":"47554_anti_clockwise","lat":52.988287,"lon":-1.149892,"countline":"47554","direction":"anti_clockwise","name":"S147_ValleyRd_road_not002"},{"id":"47557_anti_clockwise","lat":52.950695,"lon":-1.1762405,"countline":"47557","direction":"anti_clockwise","name":"S148_DerbyRd_road_not002"},{"id":"47572_clockwise","lat":52.951397,"lon":-1.1743015,"countline":"47572","direction":"clockwise","name":"S105_DerbyRd_road_not002"},{"id":"47575_clockwise","lat":52.950979,"lon":-1.175184,"countline":"47575","direction":"clockwise","name":"CS107_DerbyRd_road_not002"},{"id":"47581_clockwise","lat":52.953417,"lon":-1.137747,"countline":"47581","direction":"clockwise","name":"S109_SouthwellRd_road_not002"},{"id":"47585_anti_clockwise","lat":52.9523945,"lon":-1.136527,"countline":"47585","direction":"anti_clockwise","name":"S110_ManversSt_road_LHS_not002"},{"id":"47586_clockwise","lat":52.9524095,"lon":-1.136456,"countline":"47586","direction":"clockwise","name":"S110_ManversSt_road_RHS_not002"},{"id":"47589_anti_clockwise","lat":52.951082,"lon":-1.135241,"countline":"47589","direction":"anti_clockwise","name":"S111_ManversSt_road_not002"},{"id":"47589_clockwise","lat":52.951082,"lon":-1.135241,"countline":"47589","direction":"clockwise","name":"S111_ManversSt_road_not002"},{"id":"47592_anti_clockwise","lat":52.9489805,"lon":-1.116647,"countline":"47592","direction":"anti_clockwise","name":"S115_DalesideRd_road_not002"},{"id":"47592_clockwise","lat":52.9489805,"lon":-1.116647,"countline":"47592","direction":"clockwise","name":"S115_DalesideRd_road_not002"},{"id":"47594_anti_clockwise","lat":52.948963,"lon":-1.116699,"countline":"47594","direction":"anti_clockwise","name":"S116_DalesideRd_road_not002"},{"id":"47597_anti_clockwise","lat":52.950018,"lon":-1.1128705,"countline":"47597","direction":"anti_clockwise","name":"S117_DalesideRd_road_LHS_not002"},{"id":"47597_clockwise","lat":52.950018,"lon":-1.1128705,"countline":"47597","direction":"clockwise","name":"S117_DalesideRd_road_LHS_not002"},{"id":"47598_clockwise","lat":52.949961,"lon":-1.112843,"countline":"47598","direction":"clockwise","name":"S117_DalesideRd_road_RHS_not002"},{"id":"47607_anti_clockwise","lat":52.971161,"lon":-1.1533205,"countline":"47607","direction":"anti_clockwise","name":"S119_MansfieldRd_road_not002"},{"id":"47623_anti_clockwise","lat":52.9638405,"lon":-1.17694,"countline":"47623","direction":"anti_clockwise","name":"s92_AlfretonRd_road_not002"},{"id":"47625_anti_clockwise","lat":52.9993745,"lon":-1.19691,"countline":"47625","direction":"anti_clockwise","name":"s77_MainSt_road_not002"},{"id":"47625_clockwise","lat":52.9993745,"lon":-1.19691,"countline":"47625","direction":"clockwise","name":"s77_MainSt_road_not002"},{"id":"47626_clockwise","lat":52.967369,"lon":-1.184205,"countline":"47626","direction":"clockwise","name":"s97_AspleyLn_road_not002"},{"id":"47629_anti_clockwise","lat":52.9730395,"lon":-1.186055,"countline":"47629","direction":"anti_clockwise","name":"s99_NuthallRd_road_not002"},{"id":"47631_anti_clockwise","lat":52.973215,"lon":-1.185125,"countline":"47631","direction":"anti_clockwise","name":"s100_WesternBlvd_road_not002"},{"id":"47632_clockwise","lat":52.972044,"lon":-1.185195,"countline":"47632","direction":"clockwise","name":"s101_NuthallRd_road_not002"},{"id":"47634_clockwise","lat":52.9718955,"lon":-1.18634,"countline":"47634","direction":"clockwise","name":"s102_WesternBlvd_road_not002"},{"id":"47784_anti_clockwise","lat":52.9731695,"lon":-1.18507,"countline":"47784","direction":"anti_clockwise","name":"s100_WesternBlvd_roadLn2_not002"},{"id":"47789_anti_clockwise","lat":52.946825,"lon":-1.170653,"countline":"47789","direction":"anti_clockwise","name":"S65_CastleBlvd_road_not002"},{"id":"47789_clockwise","lat":52.946825,"lon":-1.170653,"countline":"47789","direction":"clockwise","name":"S65_CastleBlvd_road_not002"},{"id":"47792_anti_clockwise","lat":52.9634915,"lon":-1.177297,"countline":"47792","direction":"anti_clockwise","name":"S94_RadfordBlvd_road_not002"},{"id":"47792_clockwise","lat":52.9634915,"lon":-1.177297,"countline":"47792","direction":"clockwise","name":"S94_RadfordBlvd_road_not002"},{"id":"47798_clockwise","lat":52.9556715,"lon":-1.17601,"countline":"47798","direction":"clockwise","name":"S130_IlkestonRd_road_not002"},{"id":"47801_anti_clockwise","lat":52.9554405,"lon":-1.1756125,"countline":"47801","direction":"anti_clockwise","name":"S132_LentonBlvd_roadLHS_not002"},{"id":"47801_clockwise","lat":52.9554405,"lon":-1.1756125,"countline":"47801","direction":"clockwise","name":"S132_LentonBlvd_roadLHS_not002"},{"id":"47803_clockwise","lat":52.9537695,"lon":-1.1371545,"countline":"47803","direction":"clockwise","name":"S145_SouthwellRd_road_not002"},{"id":"47805_anti_clockwise","lat":52.955851,"lon":-1.175718,"countline":"47805","direction":"anti_clockwise","name":"S150_RadfordBlvd_roadLHS_not002"},{"id":"49226_anti_clockwise","lat":52.9678515,"lon":-1.1841915,"countline":"49226","direction":"anti_clockwise","name":"S96_NuthallRd_road_not002"},{"id":"49226_clockwise","lat":52.9678515,"lon":-1.1841915,"countline":"49226","direction":"clockwise","name":"S96_NuthallRd_road_not002"},{"id":"49229_anti_clockwise","lat":52.9667645,"lon":-1.1830835,"countline":"49229","direction":"anti_clockwise","name":"S98_BobbersMillBridge_road_not002"},{"id":"49229_clockwise","lat":52.9667645,"lon":-1.1830835,"countline":"49229","direction":"clockwise","name":"S98_BobbersMillBridge_road_not002"},{"id":"49233_anti_clockwise","lat":52.94677,"lon":-1.1311905,"countline":"49233","direction":"anti_clockwise","name":"S112_ManversSt_road_not002"},{"id":"49235_clockwise","lat":52.946001,"lon":-1.130718,"countline":"49235","direction":"clockwise","name":"S113_MeadowLn_road_not002"},{"id":"49247_clockwise","lat":52.9641075,"lon":-1.178128,"countline":"49247","direction":"clockwise","name":"S95_AlfretonRd_road_not002"},{"id":"49253_anti_clockwise","lat":52.946457,"lon":-1.128973,"countline":"49253","direction":"anti_clockwise","name":"S114_DalesideRd_road_not002"},{"id":"49255_clockwise","lat":52.9559575,"lon":-1.1631265,"countline":"49255","direction":"clockwise","name":"S128_IlkestonRd_road_not002"},{"id":"49259_anti_clockwise","lat":52.9559405,"lon":-1.163689,"countline":"49259","direction":"anti_clockwise","name":"S129_IlkestonRd_road_not002"},{"id":"49261_clockwise","lat":52.9604755,"lon":-1.1479075,"countline":"49261","direction":"clockwise","name":"S176_WoodboroughRd_road_not002"},{"id":"49269_anti_clockwise","lat":52.9546545,"lon":-1.1537315,"countline":"49269","direction":"anti_clockwise","name":"S211_UpperParliamentSt_road_not002"},{"id":"49269_clockwise","lat":52.9546545,"lon":-1.1537315,"countline":"49269","direction":"clockwise","name":"S211_UpperParliamentSt_road_not002"},{"id":"49289_anti_clockwise","lat":52.949789,"lon":-1.1402855,"countline":"49289","direction":"anti_clockwise","name":"S181_LondonRd_road_not002"},{"id":"49306_clockwise","lat":52.9779265,"lon":-1.1914405,"countline":"49306","direction":"clockwise","name":"S188_NuthallRd_road_not002"},{"id":"49308_clockwise","lat":52.943903,"lon":-1.1398495,"countline":"49308","direction":"clockwise","name":"S208_LondonRd_road_not002"},{"id":"49312_clockwise","lat":52.946495,"lon":-1.1405725,"countline":"49312","direction":"clockwise","name":"S214_QueensRd_road_inbound_not002"},{"id":"49313_anti_clockwise","lat":52.946575,"lon":-1.140546,"countline":"49313","direction":"anti_clockwise","name":"S214_QueensRd_road_outbound_not002"},{"id":"49315_anti_clockwise","lat":52.944191,"lon":-1.1400945,"countline":"49315","direction":"anti_clockwise","name":"S215_LondonRd_road_not002"},{"id":"49560_clockwise","lat":52.977602,"lon":-1.1908235,"countline":"49560","direction":"clockwise","name":"S213_NuthallRd_road_not002"},{"id":"49790_anti_clockwise","lat":52.9685285,"lon":-1.153869,"countline":"49790","direction":"anti_clockwise","name":"S167_MansfieldRd_road_not002"},{"id":"49791_anti_clockwise","lat":52.967571,"lon":-1.153623,"countline":"49791","direction":"anti_clockwise","name":"S168_MansfieldRd_road_not002"},{"id":"49791_clockwise","lat":52.967571,"lon":-1.153623,"countline":"49791","direction":"clockwise","name":"S168_MansfieldRd_road_not002"},{"id":"49794_anti_clockwise","lat":52.9802475,"lon":-1.147096,"countline":"49794","direction":"anti_clockwise","name":"S169_MansfieldRd_road_not002"},{"id":"49794_clockwise","lat":52.9802475,"lon":-1.147096,"countline":"49794","direction":"clockwise","name":"S169_MansfieldRd_road_not002"},{"id":"49796_anti_clockwise","lat":52.9800055,"lon":-1.1471395,"countline":"49796","direction":"anti_clockwise","name":"S170_MansfieldRd_road_not002"},{"id":"49798_anti_clockwise","lat":52.9592325,"lon":-1.1493805,"countline":"49798","direction":"anti_clockwise","name":"S171_MansfieldRd_road_not002"},{"id":"49800_anti_clockwise","lat":52.98234,"lon":-1.195596,"countline":"49800","direction":"anti_clockwise","name":"S172_NuthallRd_road_not002"},{"id":"49802_anti_clockwise","lat":52.9816015,"lon":-1.194927,"countline":"49802","direction":"anti_clockwise","name":"s173_NuthallRd_road_not002"},{"id":"49806_anti_clockwise","lat":52.9601975,"lon":-1.14802,"countline":"49806","direction":"anti_clockwise","name":"S177_WoodboroughRd_road_not002"},{"id":"49809_anti_clockwise","lat":52.959883,"lon":-1.1479855,"countline":"49809","direction":"anti_clockwise","name":"S178_WoodboroughRd_road_not002"},{"id":"49811_anti_clockwise","lat":52.960653,"lon":-1.1489,"countline":"49811","direction":"anti_clockwise","name":"S179_HuntingdonSt_road_not002"},{"id":"49811_clockwise","lat":52.960653,"lon":-1.1489,"countline":"49811","direction":"clockwise","name":"S179_HuntingdonSt_road_not002"},{"id":"49824_anti_clockwise","lat":52.946928,"lon":-1.1402185,"countline":"49824","direction":"anti_clockwise","name":"S185_LondonRd_road_not002"},{"id":"49825_anti_clockwise","lat":52.9815655,"lon":-1.1266635,"countline":"49825","direction":"anti_clockwise","name":"S186_WoodboroughRd_road_not002"},{"id":"49825_clockwise","lat":52.9815655,"lon":-1.1266635,"countline":"49825","direction":"clockwise","name":"S186_WoodboroughRd_road_not002"},{"id":"49826_anti_clockwise","lat":52.981573,"lon":-1.1262395,"countline":"49826","direction":"anti_clockwise","name":"S187_WoodboroughRd_road_not002"},{"id":"49826_clockwise","lat":52.981573,"lon":-1.1262395,"countline":"49826","direction":"clockwise","name":"S187_WoodboroughRd_road_not002"},{"id":"49829_clockwise","lat":52.9532375,"lon":-1.139019,"countline":"49829","direction":"clockwise","name":"S190_LowerParliamentSt_road_not002"},{"id":"49844_anti_clockwise","lat":52.962002,"lon":-1.12035,"countline":"49844","direction":"anti_clockwise","name":"S193_CarltonRd_road_not002"},{"id":"49915_anti_clockwise","lat":52.954603,"lon":-1.155942,"countline":"49915","direction":"anti_clockwise","name":"S203_DerbyRd_road_not002"},{"id":"52421_anti_clockwise","lat":52.9365865,"lon":-1.1344005,"countline":"52421","direction":"anti_clockwise","name":"S241_LoughboroughRdA60_road_not002"},{"id":"52632_anti_clockwise","lat":52.9535675,"lon":-1.139438,"countline":"52632","direction":"anti_clockwise","name":"S209_LowerParliamentSt_road_not002"}];
+    const ORIGINS_BY_DATE = {"2025-02-07":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-10":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-11":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-12":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-13":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-14":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-17":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-18":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-19":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-20":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-21":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-24":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-25":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-26":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-27":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"],"2025-02-28":["01:00","01:05","01:10","01:15","01:20","01:25","01:30","01:35","01:40","01:45","01:50","01:55","02:00","02:05","02:10","02:15","02:20","02:25","02:30","02:35","02:40","02:45","02:50","02:55","03:00","03:05","03:10","03:15","03:20","03:25","03:30","03:35","03:40","03:45","03:50","03:55","04:00","04:05","04:10","04:15","04:20","04:25","04:30","04:35","04:40","04:45","04:50","04:55","05:00","05:05","05:10","05:15","05:20","05:25","05:30","05:35","05:40","05:45","05:50","05:55","06:00","06:05","06:10","06:15","06:20","06:25","06:30","06:35","06:40","06:45","06:50","06:55","07:00","07:05","07:10","07:15","07:20","07:25","07:30","07:35","07:40","07:45","07:50","07:55","08:00","08:05","08:10","08:15","08:20","08:25","08:30","08:35","08:40","08:45","08:50","08:55","09:00","09:05","09:10","09:15","09:20","09:25","09:30","09:35","09:40","09:45","09:50","09:55","10:00","10:05","10:10","10:15","10:20","10:25","10:30","10:35","10:40","10:45","10:50","10:55","11:00","11:05","11:10","11:15","11:20","11:25","11:30","11:35","11:40","11:45","11:50","11:55","12:00","12:05","12:10","12:15","12:20","12:25","12:30","12:35","12:40","12:45","12:50","12:55","13:00","13:05","13:10","13:15","13:20","13:25","13:30","13:35","13:40","13:45","13:50","13:55","14:00","14:05","14:10","14:15","14:20","14:25","14:30","14:35","14:40","14:45","14:50","14:55","15:00","15:05","15:10","15:15","15:20","15:25","15:30","15:35","15:40","15:45","15:50","15:55","16:00","16:05","16:10","16:15","16:20","16:25","16:30","16:35","16:40","16:45","16:50","16:55","17:00","17:05","17:10","17:15","17:20","17:25","17:30","17:35","17:40","17:45","17:50","17:55","18:00","18:05","18:10","18:15","18:20","18:25","18:30","18:35","18:40","18:45","18:50","18:55","19:00","19:05","19:10","19:15","19:20","19:25","19:30","19:35","19:40","19:45","19:50","19:55","20:00","20:05","20:10","20:15","20:20","20:25","20:30","20:35","20:40","20:45","20:50","20:55","21:00","21:05","21:10","21:15","21:20","21:25","21:30","21:35","21:40","21:45","21:50","21:55","22:00","22:05","22:10","22:15","22:20","22:25","22:30","22:35","22:40","22:45","22:50","22:55","23:00"]};
+    const DATE_FILES = {"2025-02-07":"data/sri_map_2025-02-07.js","2025-02-10":"data/sri_map_2025-02-10.js","2025-02-11":"data/sri_map_2025-02-11.js","2025-02-12":"data/sri_map_2025-02-12.js","2025-02-13":"data/sri_map_2025-02-13.js","2025-02-14":"data/sri_map_2025-02-14.js","2025-02-17":"data/sri_map_2025-02-17.js","2025-02-18":"data/sri_map_2025-02-18.js","2025-02-19":"data/sri_map_2025-02-19.js","2025-02-20":"data/sri_map_2025-02-20.js","2025-02-21":"data/sri_map_2025-02-21.js","2025-02-24":"data/sri_map_2025-02-24.js","2025-02-25":"data/sri_map_2025-02-25.js","2025-02-26":"data/sri_map_2025-02-26.js","2025-02-27":"data/sri_map_2025-02-27.js","2025-02-28":"data/sri_map_2025-02-28.js"};
+    const CLASSES = {"0":{"name":"Non-congested","short_name":"Non-cong.","color":"#2ca25f","threshold":"SRI <= 0.10"},"1":{"name":"Congestion","short_name":"Cong.","color":"#f4c430","threshold":"0.10 < SRI <= 0.40"},"2":{"name":"Severe congestion","short_name":"Severe cong.","color":"#d7301f","threshold":"SRI > 0.40"}};
+    const HORIZONS = [15,30,45,60];
+    const DEFAULT_CENTER = [52.96111983, -1.15892456];
+    const DEFAULT_ZOOM = 12;
+    const POINT_RADIUS = 7;
+    const DEFAULT_ORIGIN = "2025-02-14 08:00";
+    const maps = {};
+    const markerStore = {};
+    const dateLoadPromises = {};
+    window.SRI_MAP_DATE_DATA = window.SRI_MAP_DATE_DATA || {};
+
+    function classInfo(classId) {
+      return CLASSES[String(classId)] || CLASSES[classId];
+    }
+
+    function popupHtml(node, sri, speed, classId, horizon, source, targetTime) {
+      const cls = classInfo(classId);
+      const speedText = Number.isFinite(Number(speed)) ? `${Number(speed).toFixed(2)} mph` : "N/A";
+      return `
+        <div class="popup-title">${source}: ${cls.name}</div>
+        <div><strong>Node:</strong> ${node.id}</div>
+        <div><strong>Countline:</strong> ${node.countline}</div>
+        <div><strong>Direction:</strong> ${node.direction}</div>
+        <div><strong>Speed:</strong> ${speedText}</div>
+        <div><strong>SRI:</strong> ${sri}</div>
+        <div><strong>Target time:</strong> ${targetTime}</div>
+        <div><strong>Horizon:</strong> ${horizon} min</div>
+        <div><strong>Name:</strong> ${node.name}</div>
+      `;
+    }
+
+    function initMap(elementId) {
+      const map = L.map(elementId, { preferCanvas: true }).setView(DEFAULT_CENTER, DEFAULT_ZOOM);
+      L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png", {
+        maxZoom: 19,
+        attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+      }).addTo(map);
+      const bounds = [];
+      const markers = NODES.map(node => {
+        const marker = L.circleMarker([node.lat, node.lon], {
+          radius: POINT_RADIUS,
+          color: "#ffffff",
+          weight: 1.4,
+          fillColor: "#999999",
+          fillOpacity: 0.9
+        }).addTo(map);
+        bounds.push([node.lat, node.lon]);
+        return marker;
+      });
+      if (bounds.length) map.fitBounds(bounds, { padding: [24, 24] });
+      maps[elementId] = map;
+      markerStore[elementId] = markers;
+    }
+
+    function loadDateData(date) {
+      if (window.SRI_MAP_DATE_DATA[date]) return Promise.resolve(window.SRI_MAP_DATE_DATA[date]);
+      if (dateLoadPromises[date]) return dateLoadPromises[date];
+      const script = document.createElement("script");
+      script.src = DATE_FILES[date];
+      dateLoadPromises[date] = new Promise((resolve, reject) => {
+        script.onload = () => resolve(window.SRI_MAP_DATE_DATA[date]);
+        script.onerror = () => reject(new Error(`Could not load data for ${date}`));
+      });
+      document.head.appendChild(script);
+      return dateLoadPromises[date];
+    }
+
+    function updateMap(elementId, horizon, source, classes, sriValues, speedValues, targetTime) {
+      const markers = markerStore[elementId];
+      markers.forEach((marker, index) => {
+        const classId = classes[index];
+        const cls = classInfo(classId);
+        const node = NODES[index];
+        const sri = sriValues[index];
+        const speed = speedValues[index];
+        marker.setStyle({ fillColor: cls.color });
+        marker.bindPopup(popupHtml(node, sri, speed, classId, horizon, source, targetTime));
+        marker.bindTooltip(`${node.id}<br>${cls.name}`, { direction: "top", opacity: 0.9 });
+      });
+    }
+
+    function populateDates() {
+      const dateSelect = document.getElementById("date-select");
+      const dates = Object.keys(ORIGINS_BY_DATE).sort();
+      dateSelect.innerHTML = "";
+      dates.forEach(date => {
+        const option = document.createElement("option");
+        option.value = date;
+        option.textContent = date;
+        dateSelect.appendChild(option);
+      });
+      const defaultDate = DEFAULT_ORIGIN.split(" ")[0];
+      if (ORIGINS_BY_DATE[defaultDate]) dateSelect.value = defaultDate;
+    }
+
+    function populateTimes() {
+      const dateSelect = document.getElementById("date-select");
+      const timeSelect = document.getElementById("time-select");
+      const times = ORIGINS_BY_DATE[dateSelect.value] || [];
+      timeSelect.innerHTML = "";
+      times.forEach(time => {
+        const option = document.createElement("option");
+        option.value = time;
+        option.textContent = time;
+        timeSelect.appendChild(option);
+      });
+      const [defaultDate, defaultTime] = DEFAULT_ORIGIN.split(" ");
+      if (dateSelect.value === defaultDate && times.includes(defaultTime)) {
+        timeSelect.value = defaultTime;
+      }
+    }
+
+    function selectedOrigin() {
+      return `${document.getElementById("date-select").value} ${document.getElementById("time-select").value}`;
+    }
+
+    async function updateAll() {
+      const date = document.getElementById("date-select").value;
+      const origin = selectedOrigin();
+      const summary = document.getElementById("selected-summary");
+      summary.textContent = `Loading ${origin}...`;
+      summary.classList.add("loading");
+      const records = await loadDateData(date);
+      const record = records[origin];
+      summary.textContent = `Prediction origin: ${origin}`;
+      summary.classList.remove("loading");
+      HORIZONS.forEach(horizon => {
+        const item = record[String(horizon)];
+        document.getElementById(`target-${horizon}`).textContent = item.target;
+        updateMap(`truth-${horizon}`, horizon, "Ground truth", item.truthClass, item.truthSri, item.truthSpeed, item.target);
+        updateMap(`pred-${horizon}`, horizon, "Predicted", item.predClass, item.predSri, item.predSpeed, item.target);
+      });
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      HORIZONS.forEach(horizon => {
+        initMap(`truth-${horizon}`);
+        initMap(`pred-${horizon}`);
+      });
+      populateDates();
+      populateTimes();
+      document.getElementById("date-select").addEventListener("change", function () {
+        populateTimes();
+        updateAll();
+      });
+      document.getElementById("time-select").addEventListener("change", updateAll);
+      updateAll();
+      setTimeout(() => Object.values(maps).forEach(map => map.invalidateSize()), 100);
+    });
+  </script>
+</body>
+</html>
