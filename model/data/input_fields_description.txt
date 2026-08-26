@@ -1,0 +1,21 @@
+Modelling input: processed/dataset_novfeb_eps0.3.npz
+
+speed: 23904 x 155, five-minute traffic speed in mph.
+eval_mask: 23904 x 155, evaluation mask after valid-observation and outlier filtering.
+impute_method: 23904 x 155, missing-value handling method labels.
+dyn: 23904 x 20, weather and time-calendar features.
+adj: 155 x 155, OSM road-network adjacency matrix.
+day_of_row: date index corresponding to each time row.
+tod_of_row: five-minute within-day time-slot index corresponding to each time row.
+row_split: train, val, or test split assigned to each time row.
+day_split: train, val, or test split assigned to each date.
+day_dow: weekday index for each date.
+prev_workday: mapping to the previous available workday.
+prev_workday_gap: gap from the previous available workday.
+prev_week: mapping to the same weekday in the previous week.
+node_id: fixed order of the 155 road nodes.
+days: 83 modelling dates.
+
+The input window covers the past 60 minutes, consisting of 12 five-minute steps. Prediction targets are 15, 30, 45, and 60 minutes ahead. Training, validation, and testing contain 50, 17, and 16 workdays respectively, corresponding to 13,250, 4,505, and 4,240 prediction windows.
+
+Full field names, continuous-variable normalisation information, and data-processing statistics are available in processed/meta_novfeb_eps0.3.json.
