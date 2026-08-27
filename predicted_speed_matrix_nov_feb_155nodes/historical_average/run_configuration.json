@@ -1,0 +1,15 @@
+{
+  "display_name": "Historical Average",
+  "dataset": "novfeb_eps0.3",
+  "seeds": [
+    -1
+  ],
+  "checkpoints": [
+    "training-slot historical mean"
+  ],
+  "run_args": [
+    {
+      "method": "Historical Average"
+    }
+  ]
+}

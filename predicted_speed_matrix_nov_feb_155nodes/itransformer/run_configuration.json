@@ -1,0 +1,56 @@
+{
+  "display_name": "iTransformer",
+  "dataset": "novfeb_eps0.3",
+  "seeds": [
+    0
+  ],
+  "checkpoints": [
+    "checkpoints\\novfeb_155nodes\\itransformer_novfeb_eps0.3_seed0.pt"
+  ],
+  "run_args": [
+    {
+      "model": "itransformer",
+      "tag": "novfeb_eps0.3",
+      "device": "cuda",
+      "seed": 0,
+      "epochs": 60,
+      "patience": 10,
+      "batch": 128,
+      "lr": 0.001,
+      "wd": 0.0,
+      "clip": 5.0,
+      "hidden": 64,
+      "layers": 2,
+      "channels": 32,
+      "kernel": 3,
+      "dropout": 0.1,
+      "tf_d_model": 64,
+      "tf_heads": 4,
+      "tf_layers": 2,
+      "tf_ff": 128,
+      "stae_input_emb": 16,
+      "stae_tod_emb": 16,
+      "stae_dow_emb": 8,
+      "stae_adaptive_emb": 32,
+      "kt": 3,
+      "ks": 3,
+      "conv": "cheb",
+      "st_channels": 64,
+      "st_bottleneck": 16,
+      "sts_channels": 64,
+      "sts_blocks": 3,
+      "sts_convs": 3,
+      "sts_step": 3,
+      "no_st_enhance": false,
+      "no_weather_gate": false,
+      "wg_part": "both",
+      "spatial_att": false,
+      "no_daily": false,
+      "no_weekly": false,
+      "run_name": null,
+      "group": "novfeb_155nodes",
+      "val_workday_only": true,
+      "log_every": 5
+    }
+  ]
+}
