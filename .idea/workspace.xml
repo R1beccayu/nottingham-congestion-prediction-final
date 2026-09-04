@@ -4,17 +4,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="3ea87e14-425a-4f3c-9900-4d929ff9dd05" name="更改" comment="">
-      <change afterPath="$PROJECT_DIR$/Script/build_dynamic_features.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/build_node_reference_speed_p85.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/build_osm_adjacency.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/build_processed_speed_data_audit_v2.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/build_speed_model_inputs.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/build_stable_node_list_v2.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/extract_speed_date_range.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/Script/preprocess_speed_to_5min_v2.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-    </list>
+    <list default="true" id="3ea87e14-425a-4f3c-9900-4d929ff9dd05" name="更改" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -43,16 +33,16 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ModuleVcsDetector.initialDetectionPerformed": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.git.unshallow": "true",
-    "git-widget-placeholder": "main",
-    "last_opened_file_path": "/Users/mac/Documents/GitHub/nottingham-congestion-prediction-final/Script",
-    "run.code.analysis.last.selected.profile": "aDefault"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ModuleVcsDetector.initialDetectionPerformed&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.git.unshallow&quot;: &quot;true&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;last_opened_file_path&quot;: &quot;/Users/mac/Documents/GitHub/nottingham-congestion-prediction-final/Script&quot;,
+    &quot;run.code.analysis.last.selected.profile&quot;: &quot;aDefault&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CopyFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/Script" />
